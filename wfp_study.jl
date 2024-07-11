@@ -14,13 +14,14 @@ t = 0.5 # minimum palatability
 
 nutreq = Dict([col[1] => col[2] for col in eachcol(data["nutr_req"][:][1:2, 2:end])]) # nutrition requirements
 nutval = Dict()
-[nutval[row[1]] = Dict([L[i] => nutrient/100 for (i, nutrient) in enumerate(row[2:end])]) for row in eachrow(data["nutr_val"][:][2:end, :])] # nutritional value [commodity][nutrient]
+[nutval[row[1]] = Dict([L[i] => nutrient/100 for (i, nutrient) in enumerate(row[2:end])]) for row in eachrow(data["nutr_val"][:][2:end, :])] # nutritional value [commodity][nutrient] per gram
 
 proc_cost = Dict()
 [proc_cost[row[1]] = Dict([K[i] => cost for (i, cost) in enumerate(row[2:end])]) for row in eachrow(data["FoodCost"][:][2:end, :])] # $ per ton for [source][commodity]
 
 trans_cost = Dict()
-[trans_cost[row[1], row[2]] = row[3] + row[4]*row[5] for row in eachrow(data["EdgesCost"][:][2:end, :])] # $ per ton for [source, destination] (same price for every commodity)
+# [trans_cost[row[1], row[2]] = row[3] + row[4]*row[5] for row in eachrow(data["EdgesCost"][:][2:end, :])] # $ per ton for [source, destination] (same price for every commodity)
+[trans_cost[row[1], row[2]] = row[5] for row in eachrow(data["EdgesCost"][:][2:end, :])] # $ per ton for [source, destination] (same price for every commodity)
 
 using JuMP
 using Gurobi
@@ -76,7 +77,7 @@ optimize!(wfp_jump)
 solution_summary(wfp_jump)
 
 for s in F.axes[1], d in F.axes[2], f in F.axes[3]
-    if value(F[s, d, f]) != 0
+    if value(F[s, d, f]) != 0# && f == "Beans"
         printstyled(f; color=:red)
         print(" FROM ")
         printstyled(s; color=:green)
