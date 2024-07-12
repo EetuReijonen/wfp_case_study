@@ -26,8 +26,7 @@ trans_cost = Dict()
 using JuMP
 using Gurobi
 using JSON
-
-include("ICNN_to_LP.jl")
+using Gogeta
 
 wfp_jump = Model(Gurobi.Optimizer)
 set_silent(wfp_jump)
@@ -95,31 +94,20 @@ objective_value(wfp_jump) - value(h_hat)
 println("PROCUREMENT COST: $(sum(proc_cost[i][k]*value(F[i, j, k]) for i in Ns, j in union(Nt, Nd), k in K))")
 println("TRANSPORT COST: $(sum(get(trans_cost, (i, j), 0)*value(F[i, j, k]) for i in union(Ns, Nt), j in union(Nt, Nd), k in K))")
 
-function check_ICNN(optimizer, filepath, output_value, input_values...; show_output=true, nonnegated=-1)
-    
-    in_values = [val for val in input_values]
+check_ICNN(Gurobi.Optimizer, "models/palatability_ICNN_negated.json", value(y), value.(x_kilo)...; negated=true)
 
-    icnn = Model()
-    set_optimizer(icnn, optimizer)
-    set_silent(icnn)
-    @objective(icnn, Max, 0)
+### PLOTTING ###
 
-    @variable(icnn, inputs[1:length(in_values)])
-    @variable(icnn, output)
+using Plots
 
-    ICNN_formulate!(icnn, filepath, output, inputs...)
-    icnn_value = nonnegated * forward_pass_ICNN!(icnn, in_values, output, inputs...)
+## Food prices
 
-    show_output && println("Output should be: $output_value")
-    show_output && println("ICNN output with given input: $icnn_value")
-    
-    if icnn_value ≈ output_value
-        show_output && println("ICNN output matches full problem\n")
-        return true
-    else
-        show_output && @warn "ICNN output does not match"
-        return false
-    end
-end
+bar(collect(keys(proc_cost["Amman S"])), map(p -> p > 1e5 ? 0 : p, collect(values(proc_cost["Amman S"]))), xticks=(1:25, keys(proc_cost["Amman S"])), xrotation=45, label="Price")
 
-check_ICNN(Gurobi.Optimizer, "models/palatability_ICNN_negated.json", value(y), value.(x_kilo)...)
+bar(collect(keys(proc_cost["Hassakeh S"])), map(p -> p > 1e5 ? 0 : p, collect(values(proc_cost["Hassakeh S"]))), xticks=(1:25, keys(proc_cost["Hassakeh S"])), xrotation=45, label="Price")
+
+bar(collect(keys(proc_cost["Homs S"])), map(p -> p > 1e5 ? 0 : p, collect(values(proc_cost["Homs S"]))), xticks=(1:25, keys(proc_cost["Homs S"])), xrotation=45, label="Price")
+
+bar(collect(keys(proc_cost["Gaziantep S"])), map(p -> p > 1e5 ? 0 : p, collect(values(proc_cost["Gaziantep S"]))), xticks=(1:25, keys(proc_cost["Gaziantep S"])), xrotation=45, label="Price")
+
+bar(collect(keys(proc_cost["Dayr_Az_Zor S"])), map(p -> p > 1e5 ? 0 : p, collect(values(proc_cost["Dayr_Az_Zor S"]))), xticks=(1:25, keys(proc_cost["Dayr_Az_Zor S"])), xrotation=45, label="Price")
