@@ -1,0 +1,54 @@
+Palatability ICNN:
+
+ARCHITECTURE: 25-100-100-1
+TRAIN-TEST: 0.8
+LOSS: MSE
+OPTIMIZER: Adam with 0.002
+EPOCHS: 99
+BATCH SIZE: 32
+
+model.evaluate(x_train, y_train, verbose=2)
+
+125/125 - 0s - loss: 5.6643e-04 - r2_score: 0.9889 - 375ms/epoch - 3ms/step
+[0.000566425733268261, 0.9889205694198608]
+
+model.evaluate(x_val, y_val, verbose=2)
+
+32/32 - 0s - loss: 7.1352e-04 - r2_score: 0.9860 - 80ms/epoch - 3ms/step
+[0.0007135187624953687, 0.986000657081604]
+
+Palatability NN:
+
+model.evaluate(x_train, y_train, verbose=2)
+
+125/125 - 1s - loss: 6.1337e-04 - r2_score: 0.9881 - 513ms/epoch - 4ms/step
+[0.0006133690476417542, 0.9881142973899841]
+
+model.evaluate(x_val, y_val, verbose=2)
+
+32/32 - 0s - loss: 0.0014 - r2_score: 0.9717 - 112ms/epoch - 3ms/step
+[0.001389712910167873, 0.9717161655426025]
+
+ARCHITECTURE: 25-100-100-1
+TRAIN-TEST: 0.8
+LOSS: MSE
+OPTIMIZER: Adam with 0.001
+EPOCHS: 100
+BATCH SIZE: 32
+
+NN small:
+
+25-20-20-1
+
+model.evaluate(x_train, y_train, verbose=2)
+
+125/125 - 0s - loss: 0.0029 - r2_score: 0.9435 - 226ms/epoch - 2ms/step
+[0.002855774248018861, 0.9434728622436523]
+[8]
+0s
+1
+model.evaluate(x_val, y_val, verbose=2)
+
+32/32 - 0s - loss: 0.0039 - r2_score: 0.9265 - 72ms/epoch - 2ms/step
+[0.003930553328245878, 0.9265322685241699]
+
