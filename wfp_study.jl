@@ -63,14 +63,13 @@ transport_costs = @expression(wfp_jump, sum(get(trans_cost, (i, j), 0)*F[i, j, k
 @constraint(wfp_jump, [k=K], x_kilo[k] == 0.01 * x[k])
 
 # ICNN formulation
-ICNN_formulate!(wfp_jump, "models/palatability_ICNN_negated.json", h_hat, x_kilo...)
+ICNN_incorporate!(wfp_jump, "models/palatability_ICNN_negated.json", h_hat, x_kilo...)
 @constraint(wfp_jump, y == -h_hat)
 
 # NN formulation
-NN_formulate!(wfp_jump, "models/palatability_NN_small.json", y, x_kilo...; U_in=ones(25), L_in=zeros(25))
+NN_incorporate!(wfp_jump, "models/palatability_NN_small.json", y, x_kilo...; U_in=ones(25), L_in=zeros(25))
 
 objective_function(wfp_jump)
-
 unset_silent(wfp_jump)
 optimize!(wfp_jump)
 solution_summary(wfp_jump)
