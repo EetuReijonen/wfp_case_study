@@ -1,0 +1,4 @@
+Model: NN, hidden layers: 1, neurons: 10 -Number of epochs: 200 -Training time: 63.647377729415894 seconds -Training R2: 0.9868099689483643 -Test R2: 0.9826943278312683 -
+Model: ICNN, hidden layers: 1, neurons: 10 -Number of epochs: 141 -Training time: 46.8288037776947 seconds -Training R2: 0.9822071194648743 -Test R2: 0.9743238687515259 -
+Model: NN, hidden layers: 2, neurons: 10 -Number of epochs: 200 -Training time: 79.38879466056824 seconds -Training R2: 0.9800872802734375 -Test R2: 0.9709510803222656 -
+Model: ICNN, hidden layers: 2, neurons: 10 -Number of epochs: 199 -Training time: 95.63076639175415 seconds -Training R2: 0.9869563579559326 -Test R2: 0.9806213974952698 -

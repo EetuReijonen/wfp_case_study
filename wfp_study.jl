@@ -1,5 +1,11 @@
 using XLSX
+using JuMP
+using Gurobi
+using JSON
+using Gogeta
+using Plots
 
+#### LOAD DATA ####
 data = XLSX.readxlsx("data/Syria_instance.xlsx")
 
 Nd = data["Demand"][:][2:4, 1] # delivery nodes
@@ -20,88 +26,69 @@ proc_cost = Dict()
 [proc_cost[row[1]] = Dict([K[i] => cost for (i, cost) in enumerate(row[2:end])]) for row in eachrow(data["FoodCost"][:][2:end, :])] # $ per ton for [source][commodity]
 
 trans_cost = Dict()
-# [trans_cost[row[1], row[2]] = row[3] + row[4]*row[5] for row in eachrow(data["EdgesCost"][:][2:end, :])] # $ per ton for [source, destination] (same price for every commodity)
 [trans_cost[row[1], row[2]] = row[5] for row in eachrow(data["EdgesCost"][:][2:end, :])] # $ per ton for [source, destination] (same price for every commodity)
 
-using JuMP
-using Gurobi
-using JSON
-using Gogeta
+#### FORMULATION ####
+ENV = Gurobi.Env()
+for model in ["NN", "ICNN"], layers in [1, 2], neurons in [10, 10, 50, 100]
 
-wfp_jump = Model(Gurobi.Optimizer)
-set_silent(wfp_jump)
+    include("wfp_util.jl")
 
-# variables and constraints (6g) and (6i)
-@variable(wfp_jump, F[i=union(Nd, Nt, Ns), j=union(Nd, Nt, Ns), k=K] >= 0) # moved commodities in tons
-
-# no transports that are not listed or transports from the node to itself
-for i in union(Nd, Nt, Ns), j in union(Nd, Nt, Ns)
-    if haskey(trans_cost, (i, j)) == false || i == j
-        @constraint(wfp_jump, [k=K], F[i, j, k] <= 0)
+    form_time = @elapsed begin
+        wfp_jump = formulate_oil(model, layers, neurons)
     end
+
+    # unset_silent(wfp_jump)
+    opt_time = @elapsed optimize!(wfp_jump)
+
+    file = open("results/palatability_$(model)s.txt", "a")
+    write(file, "\nLAYERS: $layers, NEURONS: $neurons, ")
+    write(file, "FORMULATION TIME: $form_time, ")
+    write(file, "OPTIMIZATION TIME: $opt_time, ")
+    write(file, "COST: $(objective_value(wfp_jump) - value(wfp_jump[:h_hat])), ")
+    write(file, "PALATABILITY: $(value(wfp_jump[:y]))")
+    close(file)
+
+    ## Food basket
+    plot = bar(wfp_jump[:x].axes[1], value.(wfp_jump[:x]).data, xticks=(1:25, wfp_jump[:x].axes[1]), xrotation=45, ylabel="Amount (grams per day)", label=false, title="Optimal food basket with $(model)_$(layers)_$(neurons)", ylims=[0, 300], bottom_margin=10Plots.mm)
+    savefig(plot, "results/Optimal food basket with $(model)_$(layers)_$(neurons)")
 end
 
-@variable(wfp_jump, x[k=K] >= 0) # amount of commodities in the final diet
-@variable(wfp_jump, y >= t) # palatability
 
-# objective (6a)
-procurement_costs = @expression(wfp_jump, sum(proc_cost[i][k]*F[i, j, k] for i in Ns, j in union(Nt, Nd), k in K))
-transport_costs = @expression(wfp_jump, sum(get(trans_cost, (i, j), 0)*F[i, j, k] for i in union(Ns, Nt), j in union(Nt, Nd), k in K))
 
-@objective(wfp_jump, Min, procurement_costs + transport_costs)
 
-@constraint(wfp_jump, x["Salt"] == 5) # (6e)
-@constraint(wfp_jump, x["Sugar"] == 20) # (6f)
 
-@constraint(wfp_jump, [l=L], sum(nutval[k][l] * x[k] for k in K) >= nutreq[l]) # (6d)
-@constraint(wfp_jump, [i=Nd, k=K], sum(1e6 * F[j, i, k] for j in union(Ns, Nt)) == x[k] * demand[i]) # (6c)
 
-@constraint(wfp_jump, [i=Nt, k=K], sum(F[i, j, k] for j in union(Nd, Nt)) == sum(F[j, i, k] for j in union(Ns, Nt))) # (6b)
 
-@variable(wfp_jump, h_hat)
-@variable(wfp_jump, x_kilo[k=K])
-@constraint(wfp_jump, [k=K], x_kilo[k] == 0.01 * x[k])
 
-# ICNN formulation
-ICNN_incorporate!(wfp_jump, "models/palatability_ICNN_negated.json", h_hat, x_kilo...)
-@constraint(wfp_jump, y == -h_hat)
 
-# NN formulation
-NN_incorporate!(wfp_jump, "models/palatability_NN_small.json", y, x_kilo...; U_in=ones(25), L_in=zeros(25))
 
-objective_function(wfp_jump)
-unset_silent(wfp_jump)
-optimize!(wfp_jump)
-solution_summary(wfp_jump)
 
-for s in F.axes[1], d in F.axes[2], f in F.axes[3]
-    if value(F[s, d, f]) != 0# && f == "Beans"
+
+
+
+filter(pair -> pair[2] > 0, map(food -> food => value(wfp_jump[:x][food]), wfp_jump[:x].axes[1]))
+
+for s in wfp_jump[:F].axes[1], d in wfp_jump[:F].axes[2], f in wfp_jump[:F].axes[3]
+    if value(wfp_jump[:F][s, d, f]) != 0# && f == "Beans"
         printstyled(f; color=:red)
         print(" FROM ")
         printstyled(s; color=:green)
         print(" TO ")
         printstyled(d; color=:blue)
         print(" AT ")
-        printstyled("$(round(value(F[s, d, f]), digits=3)) TONS"; color=:yellow)
+        printstyled("$(round(value(wfp_jump[:F][s, d, f]), digits=3)) TONS"; color=:yellow)
         println()
     end
 end
 
-filter(pair -> pair[2] > 0, map(food -> food => value(x[food]), x.axes[1]))
-
-objective_value(wfp_jump) - value(h_hat)
+# check_ICNN(Gurobi.Optimizer, "models/palatability_ICNN_negated.json", value(y), value.(x_kilo)...; negated=true)
 println("PROCUREMENT COST: $(sum(proc_cost[i][k]*value(F[i, j, k]) for i in Ns, j in union(Nt, Nd), k in K))")
 println("TRANSPORT COST: $(sum(get(trans_cost, (i, j), 0)*value(F[i, j, k]) for i in union(Ns, Nt), j in union(Nt, Nd), k in K))")
 
-check_ICNN(Gurobi.Optimizer, "models/palatability_ICNN_negated.json", value(y), value.(x_kilo)...; negated=true)
-
-### PLOTTING ###
-
-using Plots
-
 ## Food prices
 
-bar(collect(keys(proc_cost["Amman S"])), map(p -> p > 1e5 ? 0 : p, collect(values(proc_cost["Amman S"]))), xticks=(1:25, keys(proc_cost["Amman S"])), xrotation=45, label="Price")
+bar(collect(keys(proc_cost["Amman S"])), map(p -> p > 1e5 ? 0 : p, collect(values(proc_cost["Amman S"]))), xticks=(1:25, keys(proc_cost["Amman S"])), xrotation=45, ylabel="Price (\$ per ton)", label=false)
 
 bar(collect(keys(proc_cost["Hassakeh S"])), map(p -> p > 1e5 ? 0 : p, collect(values(proc_cost["Hassakeh S"]))), xticks=(1:25, keys(proc_cost["Hassakeh S"])), xrotation=45, label="Price")
 

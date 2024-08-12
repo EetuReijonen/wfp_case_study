@@ -1,0 +1,12 @@
+Model: NN, hidden layers: 1, neurons: 25 -Number of epochs: 200 -Training time: 64.01142907142639 seconds -Training R2: 0.988250732421875 -Test R2: 0.977743923664093 -
+Model: ICNN, hidden layers: 1, neurons: 25 -Number of epochs: 149 -Training time: 50.48197603225708 seconds -Training R2: 0.9895578026771545 -Test R2: 0.9862911105155945 -
+Model: NN, hidden layers: 1, neurons: 50 -Number of epochs: 148 -Training time: 50.075857400894165 seconds -Training R2: 0.9892054200172424 -Test R2: 0.9751366972923279 -
+Model: ICNN, hidden layers: 1, neurons: 50 -Number of epochs: 154 -Training time: 58.98505735397339 seconds -Training R2: 0.9902097582817078 -Test R2: 0.984067976474762 -
+Model: NN, hidden layers: 1, neurons: 100 -Number of epochs: 130 -Training time: 51.41977071762085 seconds -Training R2: 0.9939626455307007 -Test R2: 0.9809636473655701 -
+Model: ICNN, hidden layers: 1, neurons: 100 -Number of epochs: 131 -Training time: 56.640469789505005 seconds -Training R2: 0.989346981048584 -Test R2: 0.9829534888267517 -
+Model: NN, hidden layers: 2, neurons: 25 -Number of epochs: 180 -Training time: 77.75995373725891 seconds -Training R2: 0.9906792640686035 -Test R2: 0.9773740172386169 -
+Model: ICNN, hidden layers: 2, neurons: 25 -Number of epochs: 189 -Training time: 95.01997756958008 seconds -Training R2: 0.9907817840576172 -Test R2: 0.9851789474487305 -
+Model: NN, hidden layers: 2, neurons: 50 -Number of epochs: 164 -Training time: 80.82224130630493 seconds -Training R2: 0.9913077354431152 -Test R2: 0.9551830291748047 -
+Model: ICNN, hidden layers: 2, neurons: 50 -Number of epochs: 164 -Training time: 86.41948771476746 seconds -Training R2: 0.9886859655380249 -Test R2: 0.9815459847450256 -
+Model: NN, hidden layers: 2, neurons: 100 -Number of epochs: 104 -Training time: 53.903281927108765 seconds -Training R2: 0.993087649345398 -Test R2: 0.9728769063949585 -
+Model: ICNN, hidden layers: 2, neurons: 100 -Number of epochs: 185 -Training time: 100.57405710220337 seconds -Training R2: 0.9911771416664124 -Test R2: 0.9843476414680481 -
